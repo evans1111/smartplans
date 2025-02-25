@@ -22,49 +22,52 @@
       </div>
 
       <div class="navbar-menu" :class="{ 'is-active': isMenuOpen }">
-        <div class="navbar-start">
+        <div class="navbar-end">
           <template v-if="authStore.isAuthenticated">
-            <router-link class="navbar-item nav-link" to="/dashboard">
-              Dashboard
+            <router-link class="navbar-item" to="/dashboard">
+              <span class="icon">
+                <i class="fas fa-th-large"></i>
+              </span>
+              <span>Dashboard</span>
+            </router-link>
+            
+            <router-link class="navbar-item" to="/settings">
+              <span class="icon">
+                <i class="fas fa-cog"></i>
+              </span>
+              <span>Settings</span>
+            </router-link>
+            
+            <a class="navbar-item logout" @click="handleLogout">
+              <span class="icon">
+                <i class="fas fa-sign-out-alt"></i>
+              </span>
+              <span>Log out</span>
+            </a>
+            
+            <div class="navbar-item user-email">
+              <span class="icon">
+                <i class="fas fa-user-circle"></i>
+              </span>
+              <span>{{ authStore.user?.email }}</span>
+            </div>
+          </template>
+          
+          <template v-else>
+            <router-link to="/login" class="navbar-item">
+              <span class="icon">
+                <i class="fas fa-sign-in-alt"></i>
+              </span>
+              <span>Log in</span>
+            </router-link>
+            
+            <router-link to="/register" class="navbar-item sign-up">
+              <span class="icon">
+                <i class="fas fa-user-plus"></i>
+              </span>
+              <span>Sign up</span>
             </router-link>
           </template>
-        </div>
-
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <div class="buttons">
-              <template v-if="!authStore.isAuthenticated">
-                <router-link to="/register" class="button is-primary">
-                  <strong>Sign up</strong>
-                </router-link>
-                <router-link to="/login" class="button">
-                  Log in
-                </router-link>
-              </template>
-              <template v-else>
-                <div class="navbar-item has-dropdown is-hoverable">
-                  <a class="navbar-link">
-                    {{ authStore.user?.email }}
-                  </a>
-                  <div class="navbar-dropdown is-right">
-                    <router-link to="/settings" class="navbar-item">
-                      <span class="icon">
-                        <i class="fas fa-cog"></i>
-                      </span>
-                      <span>Settings</span>
-                    </router-link>
-                    <hr class="navbar-divider">
-                    <a class="navbar-item" @click="handleLogout">
-                      <span class="icon">
-                        <i class="fas fa-sign-out-alt"></i>
-                      </span>
-                      <span>Log out</span>
-                    </a>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -98,7 +101,8 @@ const handleLogout = async () => {
 .navbar {
   background-color: var(--darker-bg);
   border-bottom: 1px solid var(--dark-border);
-  padding: 1rem 0;
+  padding: 0.5rem 0;
+  height: auto;
 }
 
 .navbar-content {
@@ -106,6 +110,8 @@ const handleLogout = async () => {
   margin: 0 auto;
   padding: 0 1.5rem;
   width: 100%;
+  display: flex;
+  justify-content: space-between;
 }
 
 .brand {
@@ -114,6 +120,7 @@ const handleLogout = async () => {
   gap: 0.75rem;
   font-size: 1.25rem;
   color: var(--dark-text) !important;
+  padding: 0.5rem 0;
 }
 
 .brand:hover {
@@ -122,84 +129,117 @@ const handleLogout = async () => {
 
 .brand .icon {
   color: var(--primary);
+  font-size: 1.4rem;
 }
 
+/* Menu styles */
 .navbar-menu {
-  background-color: var(--darker-bg);
+  display: flex;
+  align-items: center;
 }
 
-.navbar-menu.is-active {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid var(--dark-border);
-}
-
-.navbar-item {
-  color: var(--dark-text);
+.navbar-end {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.navbar-item:hover {
-  background-color: var(--dark-card) !important;
-  color: var(--primary) !important;
-}
-
-.navbar-link {
-  color: var(--dark-text) !important;
-  background-color: transparent !important;
+.navbar-item {
+  color: var(--dark-text);
   padding: 0.5rem 1rem;
   border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.navbar-link:hover {
-  color: var(--primary) !important;
-  background-color: var(--dark-card) !important;
+.navbar-item .icon {
+  color: var(--primary);
+  font-size: 1.1rem;
 }
 
-.navbar-dropdown {
+.navbar-item:hover {
   background-color: var(--dark-card);
-  border: 1px solid var(--dark-border);
-  border-radius: 8px;
-  padding: 0.5rem;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.navbar-dropdown .navbar-item {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-}
-
-.navbar-divider {
-  background-color: var(--dark-border);
-  margin: 0.5rem 0;
-}
-
-.button {
-  background-color: var(--dark-card);
-  border-color: var(--dark-border);
-  color: var(--dark-text);
-  transition: all 0.3s ease;
-}
-
-.button:hover {
-  border-color: var(--primary);
   color: var(--primary);
 }
 
-.button.is-primary {
+/* Special styling for sign-up button */
+.sign-up {
   background-color: var(--primary);
-  border-color: transparent;
   color: white;
 }
 
-.button.is-primary:hover {
+.sign-up:hover {
   background-color: var(--primary-hover);
   color: white;
 }
 
+.sign-up .icon {
+  color: white;
+}
+
+/* User email display */
+.user-email {
+  color: var(--dark-secondary);
+  font-size: 0.9rem;
+  border-left: 1px solid var(--dark-border);
+  margin-left: 0.5rem;
+  padding-left: 1rem;
+}
+
+.logout {
+  cursor: pointer;
+}
+
+/* Mobile styles */
+@media screen and (max-width: 1023px) {
+  .navbar-menu.is-active {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    background-color: var(--darker-bg);
+    padding: 1rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--dark-border);
+  }
+
+  .navbar-end {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .navbar-item {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .user-email {
+    border-left: none;
+    border-top: 1px solid var(--dark-border);
+    margin: 0.5rem 0 0 0;
+    padding: 0.5rem 0 0 0;
+    width: 100%;
+  }
+}
+
+/* Burger menu */
 .navbar-burger {
   color: var(--dark-text);
+  height: 3.5rem;
+  width: 3.5rem;
+  display: none;
+}
+
+@media screen and (max-width: 1023px) {
+  .navbar-burger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
 }
 
 .navbar-burger:hover {
@@ -207,31 +247,9 @@ const handleLogout = async () => {
 }
 
 .navbar-burger span {
+  height: 2px;
+  width: 16px;
   background-color: currentColor;
-}
-
-@media screen and (max-width: 1023px) {
-  .navbar-menu {
-    padding: 1rem;
-  }
-  
-  .navbar-item {
-    padding: 0.75rem;
-  }
-  
-  .buttons {
-    padding: 0.5rem 0;
-  }
-}
-
-.nav-link {
-  color: var(--dark-text);
-  background: none !important;
-  padding: 0.5rem 1rem;
-}
-
-.nav-link:hover {
-  color: var(--primary) !important;
-  background: none !important;
+  display: block;
 }
 </style>
