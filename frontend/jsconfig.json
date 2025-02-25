@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "target": "ESNext"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+} 
