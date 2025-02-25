@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
-import axios from '@/utils/axios'
+import axios, { updateAuthToken, authRequest } from '@/utils/axios'
 import router from '@/router'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
-    isAuthenticated: false,
+    isAuthenticated: !!localStorage.getItem('token'),
     isLoading: false
   }),
 
@@ -21,12 +21,10 @@ export const useAuthStore = defineStore('auth', {
         const response = await axios.post('/api/auth/login/', credentials)
         const { token, user } = response.data
         
-        this.token = token
-        this.user = user
-        this.isAuthenticated = true
+        console.log('Login successful, token received:', token ? 'Yes' : 'No')
         
-        localStorage.setItem('token', token)
-        axios.defaults.headers.common['Authorization'] = `Token ${token}`
+        // Update state and localStorage
+        this.setAuthData(token, user)
         
         await router.push('/dashboard')
         return response.data
@@ -41,15 +39,13 @@ export const useAuthStore = defineStore('auth', {
     async register(credentials) {
       this.isLoading = true
       try {
-        const response = await axios.post('/auth/register/', credentials)
+        const response = await axios.post('/api/auth/register/', credentials)
         const { token, user } = response.data
         
-        this.token = token
-        this.user = user
-        this.isAuthenticated = true
+        console.log('Registration successful, token received:', token ? 'Yes' : 'No')
         
-        localStorage.setItem('token', token)
-        axios.defaults.headers.common['Authorization'] = `Token ${token}`
+        // Update state and localStorage
+        this.setAuthData(token, user)
         
         await router.push('/dashboard')
         return response.data
@@ -63,47 +59,103 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       try {
-        await axios.post('/auth/logout/')
+        await axios.post('/api/auth/logout/')
       } catch (error) {
         console.error('Logout error:', error)
       } finally {
-        this.token = null
-        this.user = null
-        this.isAuthenticated = false
-        localStorage.removeItem('token')
-        delete axios.defaults.headers.common['Authorization']
+        this.clearAuthData()
         await router.push('/login')
       }
     },
 
-    init() {
-      const token = localStorage.getItem('token')
-      if (token) {
-        this.token = token
-        this.isAuthenticated = true
-        axios.defaults.headers.common['Authorization'] = `Token ${token}`
+    setAuthData(token, user) {
+      if (!token) {
+        console.error('Attempted to set auth data with null/empty token');
+        return;
       }
+      
+      // Update state
+      this.token = token
+      this.user = user
+      this.isAuthenticated = true
+      
+      // Update localStorage
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+      
+      // Update axios defaults using our utility function
+      updateAuthToken(token)
+      
+      console.log('Auth data set successfully')
+    },
+
+    clearAuthData() {
+      // Clear state
+      this.token = null
+      this.user = null
+      this.isAuthenticated = false
+      
+      // Clear localStorage
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      
+      // Clear axios defaults using our utility function
+      updateAuthToken(null)
+      
+      console.log('Auth data cleared')
     },
 
     async checkAuth() {
+      if (!this.token) {
+        console.log('No token available, skipping auth check')
+        this.isAuthenticated = false
+        return false
+      }
+      
       try {
-        const response = await fetch('/api/auth/user/', {
-          credentials: 'include'
-        })
-        if (response.ok) {
-          const data = await response.json()
-          this.user = data.user
+        console.log('Checking authentication with token')
+        const response = await authRequest('get', '/api/auth/user/')
+        
+        if (response.status === 200) {
+          const { user } = response.data
+          this.user = user
           this.isAuthenticated = true
+          localStorage.setItem('user', JSON.stringify(user))
+          console.log('Authentication verified successfully')
+          return true
         } else {
-          this.user = null
-          this.isAuthenticated = false
+          console.warn('Auth check returned non-200 status:', response.status)
+          this.clearAuthData()
+          return false
         }
       } catch (error) {
-        console.error('Check auth error:', error)  // Debug log
-        this.user = null
-        this.isAuthenticated = false
+        console.error('Authentication check failed:', error.response?.status)
+        this.clearAuthData()
+        return false
       } finally {
         this.isLoading = false
+      }
+    },
+
+    async init() {
+      console.log('Initializing auth store')
+      const token = localStorage.getItem('token')
+      const user = localStorage.getItem('user')
+      
+      if (token && user) {
+        console.log('Found stored credentials, initializing auth state')
+        this.token = token
+        this.user = JSON.parse(user)
+        this.isAuthenticated = true
+        
+        // Ensure token is in axios headers
+        updateAuthToken(token)
+        
+        // Verify token is still valid (but don't await it)
+        this.checkAuth()
+      } else {
+        console.log('No stored credentials found')
+        this.clearAuthData()
       }
     },
 

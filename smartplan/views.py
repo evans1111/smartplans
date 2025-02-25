@@ -215,6 +215,7 @@ def user_settings(request):
             }, status=400)
 
 @api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def plan_list_create(request):
     if request.method == 'GET':
@@ -224,7 +225,7 @@ def plan_list_create(request):
     
     elif request.method == 'POST':
         try:
-            # Print everything we can about the request
+            # Print everything we can about the request for debugging
             print("\n=== DEBUG REQUEST ===")
             print("Headers:", dict(request.headers))
             print("Body:", request.body.decode('utf-8'))
@@ -232,39 +233,62 @@ def plan_list_create(request):
             print("User:", request.user)
             print("Method:", request.method)
             print("Content Type:", request.content_type)
+            print("Auth:", request.auth)
             
-            # Create the plan with minimal required data
+            # Validate required fields
+            plan_type = request.data.get('plan_type')
+            channels = request.data.get('channels', [])
+            timeline = request.data.get('timeline')
+            
+            if not plan_type:
+                return Response({'error': 'plan_type is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not channels:
+                return Response({'error': 'channels is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not timeline:
+                return Response({'error': 'timeline is required'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Validate plan_type
+            if plan_type not in [choice[0] for choice in Plan.PLAN_TYPES]:
+                return Response({'error': f'Invalid plan_type. Must be one of: {[choice[0] for choice in Plan.PLAN_TYPES]}'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+                
+            # Validate timeline
+            if timeline not in [choice[0] for choice in Plan.TIMELINE_CHOICES]:
+                return Response({'error': f'Invalid timeline. Must be one of: {[choice[0] for choice in Plan.TIMELINE_CHOICES]}'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+            
+            # Create the plan
             plan = Plan.objects.create(
                 user=request.user,
                 title=f"New SmartPlan - {timezone.now().strftime('%B %d, %Y')}",
-                plan_type=request.data['plan_type'],
-                channels=request.data['channels'],
-                timeline=request.data['timeline']
+                plan_type=plan_type,
+                channels=channels,
+                timeline=timeline,
+                status='draft'  # Initial status
             )
             
             print("Plan created:", plan.id)
             
-            # Return success response
+            # Return success response with plan data
             return Response({
                 'id': plan.id,
+                'title': plan.title,
+                'plan_type': plan.plan_type,
+                'channels': plan.channels,
+                'timeline': plan.timeline,
+                'status': plan.status,
+                'created_at': plan.created_at,
                 'message': 'Plan created successfully'
             }, status=status.HTTP_201_CREATED)
             
-        except KeyError as e:
-            print(f"Missing required field: {str(e)}")
-            return Response({
-                'error': f"Missing required field: {str(e)}"
-            }, status=status.HTTP_400_BAD_REQUEST)
-            
         except Exception as e:
-            print(f"Error creating plan: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
+            print("Error creating plan:", str(e))
             return Response({
                 'error': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def plan_detail(request, plan_id):
     try:

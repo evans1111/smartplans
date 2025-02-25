@@ -22,9 +22,9 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('email',)
 
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user', 'created_at', 'updated_at')
+    list_display = ('title', 'user', 'created_at', 'updated_at')
     list_filter = ('created_at', 'updated_at')
-    search_fields = ('name', 'description')
+    search_fields = ('title', 'description')
 
 class GeneratedPlanAdmin(admin.ModelAdmin):
     list_display = ('plan', 'user', 'created_at')

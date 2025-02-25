@@ -7,8 +7,21 @@ import Footer from './components/common/Footer.vue'
 
 const authStore = useAuthStore()
 
-onMounted(async () => {
-  await authStore.init()
+onMounted(() => {
+  console.log('App mounted - initializing auth store')
+  console.log('Token in localStorage:', localStorage.getItem('token') ? 'Available' : 'Not available')
+  
+  // Initialize the auth store
+  authStore.init()
+  
+  // Log auth status after initialization
+  setTimeout(() => {
+    console.log('Auth status after initialization:', {
+      isAuthenticated: authStore.isAuthenticated,
+      hasToken: !!authStore.token,
+      tokenPreview: authStore.token ? `${authStore.token.substring(0, 5)}...` : 'None'
+    })
+  }, 500)
 })
 </script>
 

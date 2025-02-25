@@ -48,7 +48,7 @@ class GeneratedPlan(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Plan for {self.user.username} using {self.plan.name}"
+        return f"Plan for {self.user.username} using {self.plan.title}"
 
 class UserProfile(models.Model):
     user = models.OneToOneField(
@@ -97,7 +97,7 @@ class Plan(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='plans')
-    name = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     plan_type = models.CharField(max_length=20, choices=PLAN_TYPES)
     channels = models.JSONField(default=list)
@@ -109,6 +109,9 @@ class Plan(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):

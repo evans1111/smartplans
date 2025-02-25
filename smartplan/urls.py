@@ -6,7 +6,6 @@ from django.http import JsonResponse
 
 router = DefaultRouter()
 router.register(r'templates', views.TemplateViewSet)
-router.register(r'plans', views.GeneratedPlanViewSet, basename='plan')
 
 @ensure_csrf_cookie
 def get_csrf_token(request):

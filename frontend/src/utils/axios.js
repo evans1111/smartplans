@@ -10,10 +10,11 @@ const instance = axios.create({
   withCredentials: true
 })
 
-// Add token if it exists
-const token = localStorage.getItem('token')
-if (token) {
-  instance.defaults.headers.common['Authorization'] = `Token ${token}`
+// Initialize with token from localStorage (at module load time)
+const initToken = localStorage.getItem('token')
+if (initToken) {
+  instance.defaults.headers.common['Authorization'] = `Token ${initToken}`
+  console.log('Initialized axios with token from localStorage')
 }
 
 // Function to get CSRF token from cookies
@@ -33,13 +34,70 @@ function getCsrfToken() {
   return cookieValue
 }
 
+// Function to make authenticated requests - use this instead of axios directly
+export async function authRequest(method, url, data = null) {
+  // Get the latest token
+  const token = localStorage.getItem('token')
+  if (!token) {
+    console.error('No token available for auth request')
+    throw new Error('Authentication required')
+  }
+  
+  // Prepare headers with token
+  const headers = {
+    'Authorization': `Token ${token}`,
+    'Content-Type': 'application/json'
+  }
+  
+  // Add CSRF token for non-GET requests
+  if (method.toLowerCase() !== 'get') {
+    const csrfToken = getCsrfToken()
+    if (csrfToken) {
+      headers['X-CSRFToken'] = csrfToken
+    }
+  }
+  
+  console.log(`Making authenticated ${method.toUpperCase()} request to ${url} with token`)
+  
+  try {
+    // Use axios instance but with explicit headers
+    const response = await instance({
+      method,
+      url,
+      data,
+      headers
+    })
+    return response
+  } catch (error) {
+    console.error('Auth request failed:', {
+      url,
+      status: error.response?.status,
+      data: error.response?.data
+    })
+    
+    // Handle auth errors
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.error('Authentication failed, redirecting to login')
+      // Only redirect if not already at login
+      if (router.currentRoute.value.path !== '/login') {
+        router.push('/login')
+      }
+    }
+    
+    throw error
+  }
+}
+
 // Add request interceptor
 instance.interceptors.request.use(
   config => {
-    // Get token from localStorage
+    // Get token from localStorage (in case it changed after module initialization)
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Token ${token}`
+      console.log('Adding token to request:', config.url)
+    } else {
+      console.warn('No token found for request:', config.url)
     }
     
     // Add CSRF token for non-GET requests
@@ -55,8 +113,14 @@ instance.interceptors.request.use(
       delete config.headers['Content-Type']
     }
     
-    // Log the full URL being requested
-    console.log('Making request to:', `${config.baseURL}${config.url}`)
+    // Log the full request
+    console.log('Request details:', {
+      url: `${config.baseURL}${config.url}`,
+      method: config.method,
+      headers: config.headers,
+      withCredentials: config.withCredentials
+    })
+    
     return config
   },
   error => Promise.reject(error)
@@ -96,5 +160,16 @@ instance.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+// Utility function to help debugging
+export function updateAuthToken(token) {
+  if (token) {
+    instance.defaults.headers.common['Authorization'] = `Token ${token}`
+    console.log('Token updated in axios instance')
+  } else {
+    delete instance.defaults.headers.common['Authorization']
+    console.log('Token removed from axios instance')
+  }
+}
 
 export default instance
