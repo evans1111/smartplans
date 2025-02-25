@@ -6,6 +6,8 @@ import RegisterView from '@/views/RegisterView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import PlanCreateView from '@/views/PlanCreateView.vue'
 import SettingsView from '../views/SettingsView.vue'
+import PlansView from '@/views/PlansView.vue'
+import PlanDetailView from '@/views/PlanDetailView.vue'
 
 const routes = [
   {
@@ -33,6 +35,19 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: SettingsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/plans',
+    name: 'plans',
+    component: PlansView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/plans/:id',
+    name: 'plan-detail',
+    component: PlanDetailView,
+    props: true,
     meta: { requiresAuth: true }
   },
   {

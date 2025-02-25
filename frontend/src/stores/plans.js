@@ -89,6 +89,31 @@ export const usePlansStore = defineStore('plans', {
       }
     },
 
+    async deletePlan(planId) {
+      this.isLoading = true
+      try {
+        console.log('Deleting plan with ID:', planId)
+        await authRequest('delete', `/api/plans/${planId}/`)
+        
+        // Remove the deleted plan from the plans array
+        this.plans = this.plans.filter(plan => plan.id !== planId)
+        
+        // Clear currentPlan if it was the deleted plan
+        if (this.currentPlan && this.currentPlan.id === planId) {
+          this.currentPlan = null
+        }
+        
+        console.log('Plan deleted successfully')
+        return true
+      } catch (error) {
+        console.error('Delete plan error:', error.response?.data || error.message)
+        this.error = error.message || 'Failed to delete the plan'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
     // Helper method to check authentication before making requests
     checkAuth() {
       const authStore = useAuthStore()

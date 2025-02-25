@@ -31,6 +31,13 @@
               <span>Dashboard</span>
             </router-link>
             
+            <router-link class="navbar-item" to="/plans">
+              <span class="icon">
+                <i class="fas fa-clipboard-list"></i>
+              </span>
+              <span>My Plans</span>
+            </router-link>
+            
             <router-link class="navbar-item" to="/settings">
               <span class="icon">
                 <i class="fas fa-cog"></i>
