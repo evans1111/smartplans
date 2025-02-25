@@ -1,14 +1,24 @@
 <script setup>
 import { RouterView } from 'vue-router'
+import { onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import Navbar from './components/common/Navbar.vue'
 import Footer from './components/common/Footer.vue'
+
+const authStore = useAuthStore()
+
+onMounted(async () => {
+  await authStore.init()
+})
 </script>
 
 <template>
   <div class="app-wrapper">
     <Navbar />
-    <main class="container">
-      <RouterView />
+    <main class="main-content">
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" />
+      </RouterView>
     </main>
     <Footer />
   </div>
@@ -278,5 +288,11 @@ main {
 .label {
   color: var(--dark-text);
   margin-bottom: 0.5rem;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  min-height: calc(100vh - 120px); /* Adjust based on your navbar/footer height */
 }
 </style>

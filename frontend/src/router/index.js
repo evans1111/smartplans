@@ -58,22 +58,31 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory('/'),  // Simplified base URL
+  history: createWebHistory(),  // Remove the base path
   routes
 })
 
-// Navigation guard
-router.beforeEach((to, from, next) => {
-  console.log('Navigating to:', to.path)
-  console.log('Route params:', to.params)
-  
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   
+  // Initialize auth store if needed
+  if (!authStore.initialized) {
+    await authStore.init()
+  }
+
+  // Handle protected routes
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  // Handle guest-only routes (login, register)
+  if ((to.path === '/login' || to.path === '/register') && authStore.isAuthenticated) {
+    next('/dashboard')
+    return
+  }
+
+  next()
 })
 
 export default router

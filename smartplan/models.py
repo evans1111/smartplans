@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import User, AbstractUser, BaseUserManager
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
@@ -82,27 +82,21 @@ class UserProfile(models.Model):
 class Plan(models.Model):
     PLAN_TYPES = [
         ('past-clients', 'Past Clients SmartPlan'),
-        ('open-house', 'Open House SmartPlan'),
+        ('open-house', 'Open House SmartPlan')
     ]
-
+    TIMELINE_CHOICES = [
+        ('30days', '30 Days'),
+        ('60days', '60 Days'),
+        ('90days', '90 Days')
+    ]
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('generating', 'Generating'),
         ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ('failed', 'Failed')
     ]
 
-    TIMELINE_CHOICES = [
-        ('30days', '30 Days'),
-        ('60days', '60 Days'),
-        ('90days', '90 Days'),
-    ]
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='plans'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='plans')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     plan_type = models.CharField(max_length=20, choices=PLAN_TYPES)
@@ -116,35 +110,34 @@ class Plan(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-    def __str__(self):
-        return self.name
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is required')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractUser):
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='custom_user_set',
-        blank=True,
-        help_text='The groups this user belongs to.',
-        verbose_name='groups',
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='custom_user_set',
-        blank=True,
-        help_text='Specific permissions for this user.',
-        verbose_name='user permissions',
-    )
-    
+    username = None
     email = models.EmailField(unique=True)
+    full_name = models.CharField(max_length=255, blank=True)
     
-    # Business Info
+    # Business Information
     business_name = models.CharField(max_length=255, blank=True, null=True)
     business_phone = models.CharField(max_length=20, blank=True, null=True)
     business_address = models.JSONField(default=dict, blank=True, null=True)
     target_market = models.TextField(blank=True, null=True)
     value_proposition = models.TextField(blank=True, null=True)
     additional_context = models.TextField(blank=True, null=True)
-
+    
     # Social Media
     instagram = models.URLField(max_length=255, blank=True, null=True)
     facebook = models.URLField(max_length=255, blank=True, null=True)
@@ -153,9 +146,18 @@ class CustomUser(AbstractUser):
     youtube = models.URLField(max_length=255, blank=True, null=True)
     twitter = models.URLField(max_length=255, blank=True, null=True)
     threads = models.URLField(max_length=255, blank=True, null=True)
-
+    
     # Branding
     primary_color = models.CharField(max_length=7, blank=True, null=True)
     secondary_color = models.CharField(max_length=7, blank=True, null=True)
     brand_voice = models.CharField(max_length=50, blank=True, null=True)
     brand_description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return self.email

@@ -124,11 +124,28 @@
     
     isLoading.value = true
     try {
-      await authStore.login(form.value.email, form.value.password)
-      router.push('/dashboard')
+      // Debug log
+      console.log('Login attempt with:', {
+        email: form.value.email,
+        password: form.value.password
+      })
+      
+      await authStore.login({
+        email: form.value.email,
+        password: form.value.password
+      })
+      
+      // If successful, router.push will happen automatically via navigation guard
     } catch (err) {
       console.error('Login error:', err)
-      error.value = err.message || 'Invalid email or password'
+      // More specific error handling
+      if (err.response?.status === 401) {
+        error.value = 'Invalid email or password'
+      } else if (err.response?.data?.error) {
+        error.value = err.response.data.error
+      } else {
+        error.value = 'An error occurred during login. Please try again.'
+      }
     } finally {
       isLoading.value = false
     }

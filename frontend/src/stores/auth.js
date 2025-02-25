@@ -1,66 +1,87 @@
 import { defineStore } from 'pinia'
+import axios from '@/utils/axios'
+import router from '@/router'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
+    token: localStorage.getItem('token') || null,
     isAuthenticated: false,
-    isLoading: true
+    isLoading: false
   }),
 
   actions: {
-    async login(email, password) {
+    async login(credentials) {
+      this.isLoading = true
       try {
-        console.log('Attempting login for:', email)  // Debug log
+        // First, get CSRF token
+        await axios.get('/api/auth/csrf/')
         
-        const response = await fetch('/api/auth/login/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.getCookie('csrftoken')
-          },
-          credentials: 'include',
-          body: JSON.stringify({ email, password })
-        })
-
-        const data = await response.json()
-        console.log('Login response:', data)  // Debug log
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Login failed')
-        }
-
-        this.user = data.user
+        // Then login
+        const response = await axios.post('/api/auth/login/', credentials)
+        const { token, user } = response.data
+        
+        this.token = token
+        this.user = user
         this.isAuthenticated = true
-        return true
+        
+        localStorage.setItem('token', token)
+        axios.defaults.headers.common['Authorization'] = `Token ${token}`
+        
+        await router.push('/dashboard')
+        return response.data
       } catch (error) {
-        console.error('Login error:', error)  // Debug log
+        console.error('Login error:', error.response?.data || error.message)
         throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async register(credentials) {
+      this.isLoading = true
+      try {
+        const response = await axios.post('/auth/register/', credentials)
+        const { token, user } = response.data
+        
+        this.token = token
+        this.user = user
+        this.isAuthenticated = true
+        
+        localStorage.setItem('token', token)
+        axios.defaults.headers.common['Authorization'] = `Token ${token}`
+        
+        await router.push('/dashboard')
+        return response.data
+      } catch (error) {
+        console.error('Registration error:', error.response?.data || error.message)
+        throw error
+      } finally {
+        this.isLoading = false
       }
     },
 
     async logout() {
       try {
-        const response = await fetch('/api/auth/logout/', {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': this.getCookie('csrftoken')
-          },
-          credentials: 'include'
-        })
-
-        if (!response.ok) {
-          throw new Error('Logout failed')
-        }
-
-        // Clear user data regardless of response
-        this.user = null
-        this.isAuthenticated = false
+        await axios.post('/auth/logout/')
       } catch (error) {
         console.error('Logout error:', error)
-        // Still clear user data even if the request fails
+      } finally {
+        this.token = null
         this.user = null
         this.isAuthenticated = false
-        throw error
+        localStorage.removeItem('token')
+        delete axios.defaults.headers.common['Authorization']
+        await router.push('/login')
+      }
+    },
+
+    init() {
+      const token = localStorage.getItem('token')
+      if (token) {
+        this.token = token
+        this.isAuthenticated = true
+        axios.defaults.headers.common['Authorization'] = `Token ${token}`
       }
     },
 

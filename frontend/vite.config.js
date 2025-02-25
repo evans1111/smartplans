@@ -11,17 +11,24 @@ export default defineConfig({
     assetsDir: '',
     manifest: true,
     rollupOptions: {
-      input: 'index.html',
       output: {
-        entryFileNames: `[name].js`,
-        chunkFileNames: `[name].js`,
-        assetFileNames: `[name].[ext]`
+        entryFileNames: `assets/[name].js`,
+        chunkFileNames: `assets/[name].js`,
+        assetFileNames: `assets/[name].[ext]`
       }
     }
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
+    }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      }
     }
   }
 })

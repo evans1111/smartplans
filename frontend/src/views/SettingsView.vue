@@ -491,52 +491,50 @@ const handleLogoUpload = (event) => {
 
 const loadUserData = async () => {
   try {
-    const response = await axios.get('users/settings/')
+    const response = await axios.get('/api/users/settings/')
     const data = response.data
-    console.log('Loaded user data:', data) // Debug log
+    console.log('Loaded user data:', data)
     
     // Profile data
-    profileData.value.email = data.email || ''
+    profileData.value = {
+      email: data.email || '',
+      currentPassword: '',
+      newPassword: ''
+    }
     
     // Business data
-    if (data.business_info) {
-      businessData.value = {
-        name: data.business_info.name || '',
-        phone: data.business_info.phone || '',
-        address: data.business_info.address || {
-          street: '',
-          city: '',
-          state: '',
-          zip: ''
-        },
-        targetMarket: data.business_info.target_market || '',
-        valueProposition: data.business_info.value_proposition || '',
-        additionalContext: data.business_info.additional_context || ''
-      }
+    businessData.value = {
+      name: data.business_info?.name || '',
+      phone: data.business_info?.phone || '',
+      address: data.business_info?.address || {
+        street: '',
+        city: '',
+        state: '',
+        zip: ''
+      },
+      targetMarket: data.business_info?.target_market || '',
+      valueProposition: data.business_info?.value_proposition || '',
+      additionalContext: data.business_info?.additional_context || ''
     }
     
     // Social media data
-    if (data.social_media) {
-      socialData.value = {
-        instagram: data.social_media.instagram || '',
-        facebook: data.social_media.facebook || '',
-        tiktok: data.social_media.tiktok || '',
-        linkedin: data.social_media.linkedin || '',
-        youtube: data.social_media.youtube || '',
-        twitter: data.social_media.twitter || '',
-        threads: data.social_media.threads || ''
-      }
+    socialData.value = {
+      instagram: data.social_media?.instagram || '',
+      facebook: data.social_media?.facebook || '',
+      tiktok: data.social_media?.tiktok || '',
+      linkedin: data.social_media?.linkedin || '',
+      youtube: data.social_media?.youtube || '',
+      twitter: data.social_media?.twitter || '',
+      threads: data.social_media?.threads || ''
     }
     
     // Branding data
-    if (data.branding) {
-      brandingData.value = {
-        primaryColor: data.branding.primary_color || '#000000',
-        secondaryColor: data.branding.secondary_color || '#ffffff',
-        brandVoice: data.branding.brand_voice || 'professional',
-        brandDescription: data.branding.brand_description || '',
-        logo: null
-      }
+    brandingData.value = {
+      primaryColor: data.branding?.primary_color || '#000000',
+      secondaryColor: data.branding?.secondary_color || '#ffffff',
+      brandVoice: data.branding?.brand_voice || 'professional',
+      brandDescription: data.branding?.brand_description || '',
+      logo: data.branding?.logo || null
     }
   } catch (error) {
     console.error('Error loading user data:', error)
@@ -560,14 +558,18 @@ const saveProfile = async () => {
 const saveBusinessInfo = async () => {
   isLoading.value = true
   try {
-    console.log('Sending business data:', businessData.value) // Debug log
-    const response = await axios.put('users/settings/', {
-      business: businessData.value
+    const response = await axios.put('/api/users/settings/', {
+      business: {
+        name: businessData.value.name,
+        phone: businessData.value.phone,
+        address: businessData.value.address,
+        target_market: businessData.value.targetMarket,
+        value_proposition: businessData.value.valueProposition,
+        additional_context: businessData.value.additionalContext
+      }
     })
-    console.log('Response:', response.data) // Debug log
+    console.log('Business info saved:', response.data)
     toast.success('Business information updated successfully')
-    
-    // Reload the data to verify it was saved
     await loadUserData()
   } catch (error) {
     console.error('Error saving business info:', error)
@@ -580,11 +582,10 @@ const saveBusinessInfo = async () => {
 const saveSocialMedia = async () => {
   isLoading.value = true
   try {
-    console.log('Sending social data:', socialData.value) // Debug log
-    const response = await axios.put('users/settings/', {
+    const response = await axios.put('/api/users/settings/', {
       social: socialData.value
     })
-    console.log('Response:', response.data) // Debug log
+    console.log('Social media saved:', response.data)
     toast.success('Social media links updated successfully')
     await loadUserData()
   } catch (error) {
@@ -598,11 +599,24 @@ const saveSocialMedia = async () => {
 const saveBranding = async () => {
   isLoading.value = true
   try {
-    console.log('Sending branding data:', brandingData.value) // Debug log
-    const response = await axios.put('users/settings/', {
-      branding: brandingData.value
+    const formData = new FormData()
+    formData.append('branding', JSON.stringify({
+      primaryColor: brandingData.value.primaryColor,
+      secondaryColor: brandingData.value.secondaryColor,
+      brandVoice: brandingData.value.brandVoice,
+      brandDescription: brandingData.value.brandDescription
+    }))
+    
+    if (brandingData.value.logo instanceof File) {
+      formData.append('logo', brandingData.value.logo)
+    }
+    
+    const response = await axios.put('/api/users/settings/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     })
-    console.log('Response:', response.data) // Debug log
+    console.log('Branding saved:', response.data)
     toast.success('Branding updated successfully')
     await loadUserData()
   } catch (error) {

@@ -3,22 +3,23 @@ from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Plan, GeneratedPlan, UserProfile
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'business_name', 'is_staff')
-    list_filter = ('is_staff', 'is_superuser', 'is_active')
-    fieldsets = UserAdmin.fieldsets + (
-        ('Business Information', {
-            'fields': ('business_name', 'business_phone', 'business_address', 
-                      'target_market', 'value_proposition', 'additional_context')
-        }),
-        ('Social Media', {
-            'fields': ('instagram', 'facebook', 'tiktok', 'linkedin', 
-                      'youtube', 'twitter', 'threads')
-        }),
-        ('Branding', {
-            'fields': ('primary_color', 'secondary_color', 'brand_voice', 
-                      'brand_description')
-        }),
+    model = CustomUser
+    list_display = ('email', 'full_name', 'is_staff', 'is_active')
+    list_filter = ('is_staff', 'is_active')
+    fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Personal info', {'fields': ('full_name',)}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'full_name', 'password1', 'password2', 'is_staff', 'is_active')}
+        ),
+    )
+    search_fields = ('email', 'full_name')
+    ordering = ('email',)
 
 class PlanAdmin(admin.ModelAdmin):
     list_display = ('name', 'user', 'created_at', 'updated_at')

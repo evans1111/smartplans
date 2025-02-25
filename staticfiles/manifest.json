@@ -1,32 +1,14 @@
 {
   "index.css": {
-    "file": "index.css",
+    "file": "assets/index.css",
     "src": "index.css"
   },
   "index.html": {
     "css": [
-      "index.css"
+      "assets/index.css"
     ],
-    "dynamicImports": [
-      "src/views/SettingsView.vue"
-    ],
-    "file": "index.js",
+    "file": "assets/index.js",
     "isEntry": true,
     "src": "index.html"
-  },
-  "src/views/SettingsView.css": {
-    "file": "SettingsView.css",
-    "src": "src/views/SettingsView.css"
-  },
-  "src/views/SettingsView.vue": {
-    "css": [
-      "SettingsView.css"
-    ],
-    "file": "SettingsView.js",
-    "imports": [
-      "index.html"
-    ],
-    "isDynamicEntry": true,
-    "src": "src/views/SettingsView.vue"
   }
 }
